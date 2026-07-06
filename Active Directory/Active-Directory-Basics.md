@@ -1,7 +1,9 @@
-# Active Directory Basics — Quick Reference
+# Active Directory Basics
 
 ## What is AD?
 A directory service by Microsoft that lets admins manage users, computers, and other objects in a network from one central location — instead of configuring each machine by hand.
+
+_Analogy: A corporate office with a reception desk and a registry to check you in._
 
 ## What is a DC?
 A server running AD Domain Services (AD DS) that handles all authentication/authorization requests for the domain. If it's down, no one logs in.

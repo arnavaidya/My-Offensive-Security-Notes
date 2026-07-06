@@ -47,13 +47,36 @@ Giving a user/group limited admin rights over a specific OU or task, instead of 
 
 ## Kerberos Authentication — "ID card → Wristband → Ride ticket"
 
-1. **AS-REQ/AS-REP** — Login → KDC verifies you → issues a **TGT** (your wristband for the day).
-2. **TGS-REQ/TGS-REP** — Want a resource → show TGT to KDC → get a **service ticket** for just that resource.
-3. **AP-REQ** — Show that service ticket directly to the resource server → access granted.
+**Core idea:** prove your identity once, then use tickets (not your password) for everything else. No service ever sees your actual password or hash.
 
-**Scenario:** Log into your laptop once (get TGT). Open a file share later — laptop shows TGT to KDC, gets a file-share-only ticket, hands it to the file server. No re-entering password per resource.
+**Players:**
+- **Client** — you, logging in
+- **KDC (Key Distribution Center)** — runs on the DC, has two parts: **AS** (verifies identity) and **TGS** (issues resource tickets)
+- **Service** — the file server/app you want to reach
 
-**OSCP relevance:** This ticket flow is exactly what Kerberoasting and Golden/Silver Ticket attacks abuse.
+**Flow:**
+
+| Step | What happens | Result |
+|---|---|---|
+| 1. AS-REQ | Client sends username + timestamp encrypted with your password hash to the AS | Proves you know the password (pre-auth) |
+| 2. AS-REP | AS verifies it, replies with a ticket | You get a **TGT**, encrypted with the krbtgt hash — your "wristband" (~10hrs) |
+| 3. TGS-REQ | Client shows TGT + name of the resource (SPN) to the TGS | Requesting access to a specific service |
+| 4. TGS-REP | TGS verifies TGT, issues a ticket for that resource | You get a **service ticket**, encrypted with that service account's hash |
+| 5. AP-REQ | Client hands service ticket directly to the resource server | Server decrypts with its own hash → access granted, no DC round-trip |
+
+**Scenario:** Log into your laptop once (get TGT/wristband). Open a file share later — laptop shows TGT to KDC, gets a file-share-only ticket, hands it to the file server. No re-entering password per resource.
+
+**Offensive relevance (why this matters for OSCP/AD attacks):**
+- **AS-REP Roasting** → targets Step 2 (works if pre-auth is disabled — no password needed to request the TGT reply, crack it offline)
+- **Kerberoasting** → targets Step 4 (any authenticated user can request a service ticket, then crack it offline for the service account's password)
+- **Golden Ticket** → forge a TGT using a stolen krbtgt hash (fakes Step 2 entirely)
+- **Silver Ticket** → forge a service ticket using a stolen service account hash (skips Steps 3–4, fakes Step 5)
+
+<div align="center">
+  <kbd style="border: 2px solid #555555; display: inline-block; padding: 4px;">
+    <img src="https://github.com/user-attachments/assets/6194e1fc-47dc-4adb-9724-7e7110af6718" alt="Kerberos Authentication" width="600" />
+  </kbd>
+</div>
 
 ---
 

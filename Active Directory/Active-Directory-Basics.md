@@ -5,7 +5,7 @@ A directory service by Microsoft that lets admins manage users, computers, and o
 
 _Analogy: A corporate office with a reception desk and a registry to check you in._
 
-## What is a Domain Controller (DC)?
+## What is a DC (Domain Controller) ?
 A server running AD Domain Services (AD DS) that handles all authentication/authorization requests for the domain. If it's down, no one logs in.
 
 | | |
@@ -51,18 +51,18 @@ Giving a user/group limited admin rights over a specific OU or task, instead of 
 
 **Players:**
 - **Client** — you, logging in
-- **KDC (Key Distribution Center)** — runs on the DC, has two parts: **AS** (verifies identity) and **TGS** (issues resource tickets)
+- **KDC (Key Distribution Center)** — runs on the DC, has two parts: **AS (Authentication Server)** (verifies identity) and **TGS (Ticket Granting Service)** (issues resource tickets)
 - **Service** — the file server/app you want to reach
 
 **Flow:**
 
 | Step | What happens | Result |
 |---|---|---|
-| 1. AS-REQ | Client sends username + timestamp encrypted with your password hash to the AS | Proves you know the password (pre-auth) |
-| 2. AS-REP | AS verifies it, replies with a ticket | You get a **TGT**, encrypted with the krbtgt hash — your "wristband" (~10hrs) |
-| 3. TGS-REQ | Client shows TGT + name of the resource (SPN) to the TGS | Requesting access to a specific service |
-| 4. TGS-REP | TGS verifies TGT, issues a ticket for that resource | You get a **service ticket**, encrypted with that service account's hash |
-| 5. AP-REQ | Client hands service ticket directly to the resource server | Server decrypts with its own hash → access granted, no DC round-trip |
+| 1. AS-REQ (Authentication Server Request) | Client sends username + timestamp encrypted with your password hash to the AS | Proves you know the password (pre-auth) |
+| 2. AS-REP (Authentication Server Reply) | AS verifies it, replies with a ticket | You get a **TGT (Ticket Granting Ticket)**, encrypted with the krbtgt hash — your "wristband" (~10hrs) |
+| 3. TGS-REQ (Ticket Granting Service Request) | Client shows TGT + name of the resource (SPN — Service Principal Name) to the TGS | Requesting access to a specific service |
+| 4. TGS-REP (Ticket Granting Service Reply) | TGS verifies TGT, issues a ticket for that resource | You get a **Service Session Key**, encrypted with that service account's hash |
+| 5. AP-REQ (Application Request) | Client hands service ticket directly to the resource server | Server decrypts with its own hash → access granted, no DC round-trip |
 
 **Scenario:** Log into your laptop once (get TGT/wristband). Open a file share later — laptop shows TGT to KDC, gets a file-share-only ticket, hands it to the file server. No re-entering password per resource.
 
@@ -74,7 +74,7 @@ Giving a user/group limited admin rights over a specific OU or task, instead of 
 
 <div align="center">
   <kbd style="border: 2px solid #555555; display: inline-block; padding: 4px;">
-    <img src="https://github.com/user-attachments/assets/6194e1fc-47dc-4adb-9724-7e7110af6718" alt="Kerberos Authentication" width="600" />
+    <img src="https://github.com/user-attachments/assets/6194e1fc-47dc-4adb-9724-7e7110af6718" alt="Kerberos Authentication" width="450" />
   </kbd>
 </div>
 
@@ -82,12 +82,34 @@ Giving a user/group limited admin rights over a specific OU or task, instead of 
 
 ## NetNTLM Authentication — "Solve the riddle, don't say the password"
 
-1. **Negotiate** — Client says "I want to log in."
-2. **Challenge** — Server sends a random nonce.
-3. **Response** — Client encrypts the nonce using its password hash, sends it back.
-4. **Verify** — Server/DC checks the response against the expected hash → access granted/denied.
+**Core idea:** prove you know the password by correctly responding to a random challenge — the password (or its hash) is never sent over the wire.
 
-**Scenario:** A locked door asks a riddle only the real key-holder can solve. The password is never sent — only proof you know it. That's exactly why **pass-the-hash** works: you only need the hash, not the plaintext.
+**Players:**
+- **Client** — you, trying to log in
+- **Server** — the resource you're accessing (file share, RDP, etc.)
+- **DC (Domain Controller)** — verifies the response if the server is domain-joined and can't check it locally
+
+**Flow:**
+
+| Step | What happens | Result |
+|---|---|---|
+| 1. Negotiate | Client tells the server it wants to authenticate | Starts the handshake |
+| 2. Challenge | Server sends back a random value (**nonce**) | A one-time puzzle only the real password-holder can solve |
+| 3. Response | Client encrypts the nonce using a hash derived from the user's password, sends it back | Proves knowledge of the password without sending it |
+| 4. Verify | Server (or DC, if domain-joined) checks the response against the expected hash | Access granted/denied |
+
+**Scenario:** A locked door asks a riddle only the real key-holder can solve. The password is never sent — only proof you know it.
+
+**Offensive relevance (why this matters for OSCP/AD attacks):**
+- **Pass-the-Hash** → since the hash (not the plaintext) is what solves the riddle in Step 3, an attacker who steals the hash can authenticate without ever knowing the actual password
+- **NTLM Relay** → an attacker intercepts the Challenge/Response and relays it to a different server in real-time, authenticating as the victim elsewhere
+- **Responder/LLMNR poisoning** → tricks a client into sending its NetNTLM Challenge-Response to an attacker-controlled machine, which is then cracked offline
+
+<div align="center">
+  <kbd style="border: 2px solid #555555; display: inline-block; padding: 4px;">
+    <img src="https://github.com/user-attachments/assets/fe23f171-a678-423a-aca8-20b76a227dfd" alt="NetNTLM Authentication" width="450" />
+  </kbd>
+</div>
 
 ---
 

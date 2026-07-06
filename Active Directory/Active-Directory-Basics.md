@@ -43,6 +43,10 @@ Giving a user/group limited admin rights over a specific OU or task, instead of 
   <kbd><img width="60%" alt="image" src="https://github.com/user-attachments/assets/bdf656e9-a676-4132-a908-4b8909ffa02e" /></kbd>
 </p>
 
+<p align="center">
+  <kbd><img width="60%" alt="image" src="https://github.com/user-attachments/assets/c4dfcaea-eab3-4412-b28d-846f0ee5da6d" /></kbd>
+</p>
+
 ---
 
 ## Kerberos Authentication — "ID card → Wristband → Ride ticket"

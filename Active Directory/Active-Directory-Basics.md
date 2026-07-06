@@ -39,6 +39,10 @@ Giving a user/group limited admin rights over a specific OU or task, instead of 
 - Computers become AD objects once domain-joined, and can sit in OUs like users.
 - **GPOs** = rule sets (password policy, firewall rules, login scripts, restrictions) linked to an OU/domain/site and auto-applied to everything inside it.
 
+<p align="center">
+  <kbd><img width="60%" alt="image" src="https://github.com/user-attachments/assets/bdf656e9-a676-4132-a908-4b8909ffa02e" /></kbd>
+</p>
+
 ---
 
 ## Kerberos Authentication — "ID card → Wristband → Ride ticket"

@@ -8,10 +8,15 @@ _Analogy: A corporate office with a reception desk and a registry to check you i
 ## What is a DC?
 A server running AD Domain Services (AD DS) that handles all authentication/authorization requests for the domain. If it's down, no one logs in.
 
-<div style="display: flex; gap: 15px; justify-content: center;">
-  <img width="48%" style="border: 1px solid #d0d7de; border-radius: 6px;" alt="image" src="https://github.com" />
-  <img width="48%" style="border: 1px solid #d0d7de; border-radius: 6px;" alt="image" src="https://github.com" />
-</div>
+<p align="center">
+  <kbd>
+    <img width="45%" alt="image" src="https://github.com" />
+  </kbd>
+  &nbsp;&nbsp;
+  <kbd>
+    <img width="45%" alt="image" src="https://github.com" />
+  </kbd>
+</p>
 
 ---
 

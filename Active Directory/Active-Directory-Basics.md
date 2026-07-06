@@ -5,10 +5,12 @@ A directory service by Microsoft that lets admins manage users, computers, and o
 
 _Analogy: A corporate office with a reception desk and a registry to check you in._
 
-## What is a DC?
+## What is a Domain Controller (DC)?
 A server running AD Domain Services (AD DS) that handles all authentication/authorization requests for the domain. If it's down, no one logs in.
 
-<p align="center"><kbd><img width="45%" alt="image" src="https://github.com/user-attachments/assets/a5979f5a-dedc-4bee-9bfe-36a401150fc7" /></kbd> <kbd><img width="45%" alt="image" src="https://github.com/user-attachments/assets/45277d26-f343-48e2-a7dd-cd0103c95fa4" /></kbd></p>
+| | |
+| :---: | :---: |
+| <img width="100%" alt="image" src="https://github.com/user-attachments/assets/a5979f5a-dedc-4bee-9bfe-36a401150fc7" /> | <img width="100%" alt="image" src="https://github.com/user-attachments/assets/45277d26-f343-48e2-a7dd-cd0103c95fa4" /> |
 
 ---
 
